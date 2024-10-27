@@ -31,6 +31,9 @@ export class OwnerController {
     async updateOwnerProfile(@Headers('Authorization') jwtToken:string,@Body() reqBody:UpdateProfileDto){
         try {
             const userData=await this.helperFunctions.validateToken(jwtToken);
+            if(userData.role!='owner'){
+                throw new UnauthorizedException('Not allowed to perform operation');
+            }
             await this.helperFunctions.requestBodyValidation(UpdateProfileDto,reqBody);
             const updateOwnerDetails=await this.ownerService.updateOwnerProfile(reqBody,userData['_id']);
             return this.helperFunctions.createResObj(HttpStatus.OK,updateOwnerDetails);
@@ -43,7 +46,11 @@ export class OwnerController {
     @Delete('deleteProfile')
     async deleteOwnerProfile(@Headers('Authorization') jwtToken:string){
         try {
-            
+            const userData=await this.helperFunctions.validateToken(jwtToken);
+            if(userData.role!='owner'){
+                throw new UnauthorizedException('Not allowed to perform operation');
+            }
+            await this.ownerService.deleteOwnerProfile(userData['_id']);
         } catch (error) {
             throw this.helperFunctions.createErrResBody(error);
         }
