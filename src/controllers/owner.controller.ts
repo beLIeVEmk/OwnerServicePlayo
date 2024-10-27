@@ -51,6 +51,7 @@ export class OwnerController {
                 throw new UnauthorizedException('Not allowed to perform operation');
             }
             await this.ownerService.deleteOwnerProfile(userData['_id']);
+            return this.helperFunctions.createResObj(HttpStatus.OK,{});
         } catch (error) {
             throw this.helperFunctions.createErrResBody(error);
         }
