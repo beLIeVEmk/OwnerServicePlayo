@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, Post,Headers, Query, UnauthorizedException, HttpStatus, Patch, Param } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Post,Headers, Query, UnauthorizedException, HttpStatus, Patch, Param, Delete } from '@nestjs/common';
 import UpdateProfileDto from 'src/dto/updateprofile.dto';
 import { OwnerService } from 'src/services/owner.service';
 import { HelperFunctions } from 'src/utils/helperFunctions';
@@ -34,6 +34,16 @@ export class OwnerController {
             await this.helperFunctions.requestBodyValidation(UpdateProfileDto,reqBody);
             const updateOwnerDetails=await this.ownerService.updateOwnerProfile(reqBody,userData['_id']);
             return this.helperFunctions.createResObj(HttpStatus.OK,updateOwnerDetails);
+        } catch (error) {
+            throw this.helperFunctions.createErrResBody(error);
+        }
+    }
+
+    @HttpCode(200)
+    @Delete('deleteProfile')
+    async deleteOwnerProfile(@Headers('Authorization') jwtToken:string){
+        try {
+            
         } catch (error) {
             throw this.helperFunctions.createErrResBody(error);
         }

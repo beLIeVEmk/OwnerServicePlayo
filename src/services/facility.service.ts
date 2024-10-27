@@ -94,4 +94,12 @@ export class FacilityService{
             throw error;
         }
     }
+
+    async deleteAllFacsOfowner(ownerId:string){
+        try {
+            return await this.facModel.deleteMany({ownerId});
+        } catch (error) {
+            throw error
+        }
+    }
 }

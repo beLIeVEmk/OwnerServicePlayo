@@ -5,12 +5,14 @@ import UpdateProfileDto from "src/dto/updateprofile.dto";
 import { OwnerDocument, OwnerModel } from "src/schema/ownerprofile.schema";
 import { CONSTANTS } from "src/utils/constants";
 import { HelperFunctions } from "src/utils/helperFunctions";
+import { FacilityService } from "./facility.service";
 
 
 @Injectable()
 export class OwnerService{
     constructor(@InjectModel(OwnerModel) private readonly userModel:Model<OwnerDocument>,
-                private readonly helperFunctions:HelperFunctions){}
+                private readonly helperFunctions:HelperFunctions,
+                private readonly facService:FacilityService){}
 
     async getOwnerProfile(uuid:string){
         try {
@@ -50,6 +52,19 @@ export class OwnerService{
             return await this.userModel.updateOne({_id:uuid},{...toUpdatePayload},{upsert:true});
         } catch (error) {
             throw error
+        }
+    }
+
+    async deleteOwnerProfile(ownerId:string){
+        try {
+            const ownerData=await this.userModel.deleteOne({_id:ownerId});
+            if(ownerData.deletedCount==0){
+                throw new BadRequestException('Invalid request')
+            }
+            await this.facService.deleteAllFacsOfowner(ownerId);
+            return true;
+        } catch (error) {
+            throw error;
         }
     }
 }
