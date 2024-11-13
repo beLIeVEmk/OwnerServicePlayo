@@ -8,6 +8,9 @@ class timeSlotValues{
 
     @IsDateString()
     endTime:Date
+
+    @IsString()
+    timeSlotId:string
 }
 class UpdateFacilityDto{
     @IsString()
@@ -41,8 +44,7 @@ class UpdateFacilityDto{
     @IsArray()
     @ArrayMinSize(1, { message: 'deltimeSlots must contain at least 1 element' })
     @ValidateNested({ each: true })
-    @Type(() => timeSlotValues)
-    deltimeSlots: timeSlotValues[];
+    deltimeSlots:Array<String>;
 }
 
 export default UpdateFacilityDto

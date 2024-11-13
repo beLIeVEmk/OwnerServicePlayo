@@ -91,6 +91,19 @@ export class HelperFunctions{
         throw error;
       }
     }
+
+    getNextWeekMidnight() {
+      const today = new Date();
+    
+      // Set the time of today to midnight
+      today.setHours(0, 0, 0, 0);
+    
+      // Add 7 days to get to the same day next week
+      const nextWeekMidnight = new Date(today);
+      nextWeekMidnight.setDate(today.getDate() + 7);
+    
+      return nextWeekMidnight.getTime();
+    }
     createErrResBody(error){
         if(error?.code || error?.response?.field){
             const code=error.code

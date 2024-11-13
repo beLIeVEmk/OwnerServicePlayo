@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Type } from "class-transformer";
-import { ArrayMinSize, IsArray, IsDateString, ValidateNested } from "class-validator";
+import { ArrayMinSize, IsArray, IsBoolean, IsDateString, IsNumber, IsString, ValidateNested } from "class-validator";
 const bcrypt = require('bcrypt');
 
 export class timeSlotValues{
@@ -9,6 +9,9 @@ export class timeSlotValues{
 
     @IsDateString()
     endTime:Date
+
+    @IsString()
+    timeSlotId:string
 }
 @Schema({versionKey:false})
 class Facility{
@@ -36,6 +39,9 @@ class Facility{
     @ValidateNested({ each: true }) // Validates each element in the array
     @Type(() => timeSlotValues) // Ensures transformation to the correct type
     timeSlots: timeSlotValues[];
+
+    @IsNumber()
+    delFlag:number
 }
 
 export type FacilityDocument=Document & Facility

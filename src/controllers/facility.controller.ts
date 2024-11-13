@@ -1,11 +1,12 @@
 import { Body, Controller, Get, HttpCode, Post,Headers, Query, UnauthorizedException, HttpStatus, Patch, Param, Delete, BadRequestException } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import CreateFacilityDto from 'src/dto/createFacility.dto';
 import UpdateFacilityDto from 'src/dto/updateFacility.dto';
 import UpdateProfileDto from 'src/dto/updateprofile.dto';
 import { FacilityService } from 'src/services/facility.service';
 import { OwnerService } from 'src/services/owner.service';
 import { HelperFunctions } from 'src/utils/helperFunctions';
-
+import { v4 as uuidv4 } from 'uuid';
 @Controller('facility')
 export class FacilityController {
 
@@ -21,6 +22,10 @@ export class FacilityController {
             const userData=await this.helperFunctions.validateToken(jwtToken);
             if(userData.role!='owner'){
                 throw new UnauthorizedException('Not allowed to perform operation');
+            }
+            reqBody['delFlag']=-1;
+            for(let timeSlot of reqBody.timeSlots){
+                timeSlot.timeSlotId=uuidv4();
             }
             await this.helperFunctions.requestBodyValidation(CreateFacilityDto,reqBody);
             const facilityInfo=await this.facService.createFacility(reqBody,userData['_id']);
@@ -47,6 +52,7 @@ export class FacilityController {
 
     @HttpCode(200)
     @Get('facilityInfo')
+    @Throttle({ default: { limit: 3, ttl: 60 } })
     async getFacInfo(@Headers('Authorization') jwtToken:string,@Query('id') facilityId:string){
         try {
             const userData=await this.helperFunctions.validateToken(jwtToken);
@@ -82,6 +88,11 @@ export class FacilityController {
             const userData=await this.helperFunctions.validateToken(jwtToken);
             if(userData.role!='owner'){
                 throw new UnauthorizedException('Not allowed to perform operation');
+            }
+            if(reqBody.addtimeSlots && reqBody.addtimeSlots.length>0){
+                for(let timeSlot of reqBody.addtimeSlots){
+                    timeSlot.timeSlotId=uuidv4();
+                }
             }
             await this.helperFunctions.requestBodyValidation(UpdateFacilityDto,reqBody);
             const response=await this.facService.updateFacility(facilityId,reqBody);

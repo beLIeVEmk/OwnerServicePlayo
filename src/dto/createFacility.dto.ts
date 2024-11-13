@@ -1,13 +1,16 @@
 import { Type } from "class-transformer";
 import { ArrayMinSize, IsArray, IsDateString, IsEmail, IsNotEmpty, IsNumber, IsOptional, IsString, Validate, ValidateNested } from "class-validator";
 
-class timeSlotValues{
+export class timeSlotValues{
 
     @IsDateString()
     startTime:Date
 
     @IsDateString()
     endTime:Date
+
+    @IsString()
+    timeSlotId:string
 }
 class CreateFacilityDto{
     @IsString()

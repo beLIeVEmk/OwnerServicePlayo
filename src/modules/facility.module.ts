@@ -6,8 +6,8 @@ import { HelperFunctions } from 'src/utils/helperFunctions';
 
 
 @Module({
-  imports: [MongoModule],
+  imports: [],
   controllers: [FacilityController],
-  providers: [FacilityService,HelperFunctions],
+  providers: [FacilityService],
 })
 export class FacilityModule {}

@@ -27,6 +27,9 @@ export class FacilityService{
 
     async deleteFacility(facilityId:string){
         try {
+
+            await this.facModel.updateOne({_id:facilityId},{delFlag:this.helperFunctions.getNextWeekMidnight()})
+            // should be made effective on 8th day and delfalg =1
             if(!isObject(facilityId)){
                 throw new BadRequestException('Invalid facilityId')
             }
@@ -65,19 +68,27 @@ export class FacilityService{
 
     async updateFacility(facilityId:string,reqBody:UpdateFacilityDto){
         try {
+            
             if(!isObject(facilityId)){
                 throw new BadRequestException('Invalid facilityId')
             }
-            let timeSlot=(await this.facModel.findOne({_id:facilityId},{timeSlots:1})).timeSlots;
-            
+            let response=(await this.facModel.findOne({_id:facilityId},{timeSlots:1}));
+            if(!response){
+                throw new BadRequestException('Invalid update request');
+            }
+            if(response.delFlag!=-1){
+                throw new BadRequestException('Have opted to delete the facility so cant perform operation.')
+            }
+            let timeSlot=response.timeSlots
+            // should be made effective after a week (8th day) - cron tab
             if(reqBody.addtimeSlots || reqBody.deltimeSlots){
                 if(reqBody.deltimeSlots){
                     const startTime=new Map();
                     reqBody.deltimeSlots.forEach((time)=>{
-                        startTime.set(time.startTime,1);
+                        startTime.set(time,1);
                     })
                     timeSlot=timeSlot.filter((time)=>{
-                        return !startTime.has(time.startTime)
+                        return !startTime.has(time.timeSlotId)
                     })
                 }
                 
@@ -97,7 +108,9 @@ export class FacilityService{
 
     async deleteAllFacsOfowner(ownerId:string){
         try {
-            return await this.facModel.deleteMany({ownerId});
+            await this.facModel.updateMany({ownerId},{delFlag:1});
+            // should be made effective on 8th day and delflag=1 - use individual id and NOT DelteAll
+            return await this.facModel.deleteMany({$and:[{ownerId},{delFlag:{$ne:-1}}]});
         } catch (error) {
             throw error
         }
