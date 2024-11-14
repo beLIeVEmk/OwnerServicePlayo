@@ -10,10 +10,8 @@ import { config } from 'src/common/config';
 
 @Module({
   imports: [
-    MongoModule, // Keep this import if necessary
-    MongooseModule.forFeature([{ name: FacilityModel, schema: FacilitySchema,collection:config.db.mongo.collections.facility }]),
-    ScheduleModule, // Import ScheduleModule for cron jobs
+    ScheduleModule,
   ],
-  providers: [FacilityService],
+  providers: [ScheduleService,FacilityService],
 })
 export class SchedulesModule {}

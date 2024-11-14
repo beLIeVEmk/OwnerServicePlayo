@@ -1,19 +1,20 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
+import { SchedulerRegistry } from "@nestjs/schedule";
 import { isObject } from "class-validator";
+import { CronJob } from "cron";
 import { get, Model } from "mongoose";
 import CreateFacilityDto from "src/dto/createFacility.dto";
 import UpdateFacilityDto from "src/dto/updateFacility.dto";
 import { FacilityDocument, FacilityModel } from "src/schema/facility.schema";
-import { OwnerDocument, OwnerModel } from "src/schema/ownerprofile.schema";
-import { CONSTANTS } from "src/utils/constants";
 import { HelperFunctions } from "src/utils/helperFunctions";
 
 
 @Injectable()
 export class FacilityService{
     constructor(@InjectModel(FacilityModel) private readonly facModel:Model<FacilityDocument>,
-                private readonly helperFunctions:HelperFunctions){}
+                private readonly helperFunctions:HelperFunctions,
+                private schedulerRegistry: SchedulerRegistry){}
 
     async createFacility(reqBody:CreateFacilityDto,uuid:string){
         try {
@@ -27,17 +28,24 @@ export class FacilityService{
 
     async deleteFacility(facilityId:string){
         try {
-
-            await this.facModel.updateOne({_id:facilityId},{delFlag:this.helperFunctions.getNextWeekMidnight()})
-            // should be made effective on 8th day and delfalg =1
             if(!isObject(facilityId)){
                 throw new BadRequestException('Invalid facilityId')
             }
-            const deleteFacilityResponse=await this.facModel.deleteOne({_id:facilityId});
-            if(deleteFacilityResponse.deletedCount==1){
-                return true;
+            const response=await this.facModel.updateOne({_id:facilityId},{delFlag:this.helperFunctions.getNextWeekMidnight()})
+            if(response.modifiedCount==0){
+                throw new BadRequestException('Invalid facilityId request')
             }
-            throw new BadRequestException('Invalid facilityId request');
+            // should be made effective on 8th day and delfalg =1
+            const targetDate = new Date();
+            targetDate.setDate(targetDate.getDate() + 8);
+            targetDate.setHours(0, 0, 0, 0);
+            const job = new CronJob(targetDate, async () => {
+                const deleteFacilityResponse=await this.facModel.deleteOne({_id:facilityId});
+                this.schedulerRegistry.deleteCronJob(`deleteFacility_${facilityId}`);
+            });
+            this.schedulerRegistry.addCronJob(`deleteFacility_${facilityId}`, job);
+            job.start();
+            return true;
         } catch (error) {
             throw error;
         }
@@ -49,10 +57,10 @@ export class FacilityService{
                 throw new BadRequestException('Invalid facilityId')
             }
             const facInfo=await this.facModel.findById(facilityId);
-            if(facInfo.ownerId==uid){
-                return facInfo;
+            if(facInfo.ownerId!=uid){
+                throw new BadRequestException('Invalid facilityId request');                
             }
-            throw new BadRequestException('Invalid facilityId request');
+            return facInfo;
         } catch (error) {
             throw error;
         }
@@ -80,7 +88,6 @@ export class FacilityService{
                 throw new BadRequestException('Have opted to delete the facility so cant perform operation.')
             }
             let timeSlot=response.timeSlots
-            // should be made effective after a week (8th day) - cron tab
             if(reqBody.addtimeSlots || reqBody.deltimeSlots){
                 if(reqBody.deltimeSlots){
                     const startTime=new Map();
@@ -99,8 +106,17 @@ export class FacilityService{
                 delete reqBody.deltimeSlots;
                 reqBody['timeSlots']=timeSlot;
             }
-            
-            return await this.facModel.findOneAndUpdate({_id:facilityId},{...reqBody});
+            // should be made effective after a week (8th day) - cron tab
+            const targetDate = new Date();
+            targetDate.setDate(targetDate.getDate() + 8);
+            targetDate.setHours(0, 0, 0, 0);
+            const job = new CronJob(targetDate, async () => {
+                await this.facModel.findOneAndUpdate({_id:facilityId},{...reqBody});
+                this.schedulerRegistry.deleteCronJob(`updateFacility_${facilityId}`);
+            });
+            this.schedulerRegistry.addCronJob(`updateFacility_${facilityId}`, job);
+            job.start();
+            return true;
         } catch (error) {
             throw error;
         }
@@ -108,9 +124,21 @@ export class FacilityService{
 
     async deleteAllFacsOfowner(ownerId:string){
         try {
-            await this.facModel.updateMany({ownerId},{delFlag:1});
+            const response=await this.facModel.updateMany({ownerId},{delFlag:1});
             // should be made effective on 8th day and delflag=1 - use individual id and NOT DelteAll
-            return await this.facModel.deleteMany({$and:[{ownerId},{delFlag:{$ne:-1}}]});
+            if(response.modifiedCount==0){
+                throw new BadRequestException('Invalid facility request')
+            }
+            const targetDate = new Date();
+            targetDate.setDate(targetDate.getDate() + 8);
+            targetDate.setHours(0, 0, 0, 0);
+            const job = new CronJob(targetDate, async () => {
+                await this.facModel.deleteMany({$and:[{ownerId},{delFlag:{$ne:-1}}]});
+                this.schedulerRegistry.deleteCronJob(`deleteAllFacsOfowner_${ownerId}`);
+            });
+            this.schedulerRegistry.addCronJob(`deleteAllFacsOfowner_${ownerId}`, job);
+            job.start();
+            return true;
         } catch (error) {
             throw error
         }

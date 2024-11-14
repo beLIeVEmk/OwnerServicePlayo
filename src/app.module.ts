@@ -8,6 +8,7 @@ import { GlobalModule } from './modules/global.module';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard } from '@nestjs/throttler';
+import { SchedulesModule } from './modules/schedule.module';
 
 @Module({
   imports: [OwnerModule,FacilityModule,GlobalModule,
@@ -18,7 +19,8 @@ import { ThrottlerGuard } from '@nestjs/throttler';
           limit:10
         }
       ]
-    })
+    }),
+    SchedulesModule
   ],
   controllers: [AppController],
   providers: [AppService, {

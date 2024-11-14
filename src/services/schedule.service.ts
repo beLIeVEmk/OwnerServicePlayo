@@ -8,8 +8,7 @@ import { FacilityDocument, FacilityModel } from 'src/schema/facility.schema';
 @Injectable()
 export class ScheduleService {
 
-  constructor(private schedulerRegistry: SchedulerRegistry
-  ) {}
+  constructor(private schedulerRegistry: SchedulerRegistry) {}
 
   
 
